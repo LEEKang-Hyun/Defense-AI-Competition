@@ -1,0 +1,145 @@
+=== FIMI 조기경보 설치 시작 (10-26 03:07) ===
+Python 3.12.4
+--- 부품 설치 (몇 분 걸립니다) ---
+--- 1/10 가상 데이터 만들기 ---
+accounts=2339  posts=2983
+truth_narrative  truth_is_campaign
+N1               False                1402
+                 True                  103
+N2               False                 423
+N3               False                  25
+N4               False                 976
+                 True                   54
+langs: {'ko': 2979, 'zh': 1, 'ru': 1, 'ja': 1, 'en': 1}
+--- 2/10 서사 묶기 (처음엔 모델 다운로드 약 470MB) ---
+posts=2983 ko=1123 foreign=4  clusters(ko)=7  narratives(size>=8)=7
+  N0: ko=1501 foreign=4 lead_h=7.5  방위비 협상에서 미국의 요구가 강해지는 것은 한미동맹에 균열이 생기고 있다는 것을 보여주는 것이다. 공유 바랍니다.
+  N2: ko=1022 foreign=0 lead_h=None  운동 가기 싫다
+  N3: ko= 101 foreign=0 lead_h=None  새로 나온 게임 해본 사람?
+  N4: ko=  98 foreign=0 lead_h=None  커피 값 너무 올랐네
+  N1: ko=  94 foreign=0 lead_h=None  버스 또 놓침
+  N5: ko=  85 foreign=0 lead_h=None  날씨 갑자기 추워졌다
+  N6: ko=  78 foreign=0 lead_h=None  고양이 사진 보고 힐링
+--- 3/10 조정 신호 ---
+bursts=7  account-rows=2642
+tier          normal  review  suspected
+narrative_id                           
+0               1330       3         27
+1                 92       0          0
+2                810      25          0
+3                100       0          0
+4                 96       0          0
+5                 83       0          0
+6                 76       0          0
+--- 4/10 경보 + 대응 단계 권고 ---
+N0: max=CRITICAL first_watch=2026-10-01 13:00:00  first_alert=2026-10-02 17:00:00  first_critical=2026-10-03 08:00:00  conf=높음
+N2: max=REVIEW   first_watch=None  first_alert=None  first_critical=None  conf=낮음
+서사별 권고가 처음 나온 시각:
+  N0: 13시 사전 반박 준비
+  N0: 41시 사전 반박 실행 검토
+  N2: 31시 관찰(집계만) — 국내 사안, 증거 봉인 대상 아님
+--- 5/10 증거 봉인 ---
+sealed 4 bundle(s) · chain head cf6a94ed6504170d…
+(True, '검증 통과 · 기록 4건 · 체인 끝 cf6a94ed6504170d…')
+--- 6/10 민감도 분석 ---
+기준값            정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+burst 최소 계정 6  정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+burst 최소 계정 10 정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+burst 배율 3배    정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+burst 배율 8배    정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+burst 창 5분     정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+burst 창 20분    정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+가중치 균등         정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+신생 계정 신호 제외    정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+동일 URL 신호 제외   정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+의심 임계 0.5      정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+의심 임계 0.7      정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 41 CRIT 56 | 오경보 0
+경보 확률 기준 0.3   정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 27 CRIT 56 | 오경보 0
+경보 확률 기준 0.7   정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 55 CRIT 57 | 오경보 0
+R 합산 1시간       정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 26 CRIT 55 | 오경보 0
+R 합산 6시간       정밀도 1.0 재현율 0.9 오탐 0 | WATCH 13 ALERT 43 CRIT 58 | 오경보 0
+[시간 셔플] 실제 burst 7, 의심 27 → 셔플 [{'bursts': 0, 'suspected': 0}, {'bursts': 0, 'suspected': 0}, {'bursts': 0, 'suspected': 0}]
+[관할 제한] 외국어 출처 제거 시: [{'narrative_id': 0, 'max_level': 'REVIEW', 'jurisdiction': '국내 사안 — 외국어 출처 연결 없음. 군 관할 아님(필요 시 관계 기관 이관 검토)'}, {'narrative_id': 2, 'max_level': 'REVIEW', 'jurisdiction': '외국어 출처 없음 — 국내 집단 행동으로 보임(검토 권장, 군 관할 아님)'}]
+[권고 민감도]
+ ORGANIC_MIN  P_SPREAD  공작_준비_시  공작_실행검토_시 공작_공식대응_시  정상서사_준비이상
+           3       0.4       13         41      None          0
+           3       0.5       13         41      None          0
+           3       0.6       13         42      None          0
+           5       0.4       13         41      None          0
+           5       0.5       13         41      None          0
+           5       0.6       13         42      None          0
+           8       0.4       13         41      None          0
+           8       0.5       13         41      None          0
+           8       0.6       13         42      None          0
+--- 7/10 제2 신호층 (URL 공유 네트워크) ---
+URL 게시 95건 · 링크 공유 계정 57 · 링크 5개
+임계값 τ=3.3856 (URL 셔플 대조군 쌍 점수 99.9 백분위 (희귀 링크만 집계)) · 대조군 묶임 계정 [0, 0, 0]
+간선 3 · 묶음 1 · 의심 묶음 0 · 의심 계정 0
+--- 8/10 전조 카드 + 역사 재생 ---
+official_statements=4  narrative_items=5  (모두 가상)
+  A1 10-01 03:00 외무성 대변인 담화: 남측이 동맹국과 벌이는 방위비 흥정은 동맹의 균열을 스스로 드러내는 것이…
+  A2 10-01 11:00 국방성 부상 담화: 남측 민간단체가 국경 일대에서 삐라 살포를 계속한다면 그에 상응한 조치가…
+  A3 10-02 05:00 총참모부 보도: 총참모부는 국경 일대 부대들에 대기 태세를 지시하였다. 이미 경고한 상응…
+  A4 10-02 23:00 외무성 대변인 담화: 우리는 긴장 완화를 바라며 대화의 문은 열려 있다. 남측이 성의를 보인다…
+statements=4 items=5 campaign=N0
+  A1   3.0h L1 tone=neutral 발언 존재(위협·조건 없음) | means=False dl=None
+  A2  11.0h L3 tone=threat  위협 표현 · 조건부 위협 + 시한 · 장소 | means=True dl=(48, 168)
+  A3  29.0h L3 tone=threat  위협 표현 · 시한·장소가 명시된 예고 | means=True dl=(0, 24)
+  A4  47.0h L2 tone=soft    위협 표현(완화 톤과 혼재) | means=False dl=None
+  B: [('B1', 'pretext'), ('B2', 'pretext'), ('B3', 'victim'), ('B4', 'mobilization'), ('B5', 'pretext')]
+  summary: {'campaign_narrative': 0, 'a_first_level3_h': 11.0, 'a_first_level3_id': 'A2', 'c_first_watch_h': 13, 'c_first_alert_h': 41, 'first_converged_h': 13, 'first_mismatch_h': 47, 'a_to_watch_h': 2.0, 'lead_window_days': [2.5, 7]}
+  state changes: [(1, 'none'), (3, 'watch'), (11, 'rhetoric_only'), (13, 'converged'), (47, 'mismatch')]
+A1 선행 사례  국방성 부상 담화(오물풍선 살포 예고) → 첫 살포         v1: L3 없음 (최고 L1)                v2: L3 선행 2일
+A2 선행 사례  국방성 부상 담화(살포 잠정 중단 + 재개 시 백배 조건부 경   v1: L3 없음 (최고 L1)                v2: L3 없음 (최고 L2)
+A3 선행 사례  총참모부 보도(도로·철길 단절·요새화 예고) → 외무성 중대성   v1: L3 선행 4일                     v2: L3 선행 6일
+A4 선행 사례  중국 외교부·국방부·동부전구 발언(미 하원의장 대만 방문) →   v1: 영어 원문·요약문 → 추출 제외, 사례 메모만    v2: 영어 원문·요약문 → 추출 제외, 사례 메모만
+A5 선행 사례  연평도 포격 당일 전통문(사격훈련 시 좌시 않겠다) → 당일    v1: L3 없음 (최고 L1)                v2: L3 선행 0일
+B1 오경보 사례 북측 전화통지문('2차, 3차의 예상할 수 없는 자위적 타격'   v1: L3인데 14일 내 행동 없음 → 공식 축 단독이면 오경보 v2: L3인데 14일 내 행동 없음 → 공식 축 단독이면 오경보
+B2 오경보 사례 외무성, 평양 주재 외국공관에 '4월 10일 이후 안전 보장    v1: 최고 L1 → 수사 단독, 경보 아님         v2: L3인데 14일 내 행동 없음 → 공식 축 단독이면 오경보
+B3 오경보 사례 노동당 부부장 연설('강력한 보복성 대응', '박멸') → 1   v1: 최고 L1 → 수사 단독, 경보 아님         v2: 최고 L2 → 수사 단독, 경보 아님
+C6 반례     미 대통령 '2주 안에 결정' 발언(대변인 대독, 완화 신호)   v1: 영어 원문·요약문 → 추출 제외, 사례 메모만    v2: 영어 원문·요약문 → 추출 제외, 사례 메모만
+C7 반례     Joint Sword-2024A — 훈련 개시와 공표가 동시(   v1: 영어 원문·요약문 → 추출 제외, 사례 메모만    v2: 영어 원문·요약문 → 추출 제외, 사례 메모만
+summary: {"v1": {"n_precedent": 4, "n_hit": 1, "leads": [4], "n_false_alarm_cases": 3, "n_false_alarm_l3": 1, "n_excluded": 3}, "v2": {"n_precedent": 4, "n_hit": 3, "leads": [2, 6, 0], "n_false_alarm_cases": 3, "n_false_alarm_l3": 2, "n_excluded": 3}}
+--- 9/10 백업 화면 + 한 화면 시연 만들기 ---
+위성 사례: 지점 4개 · 영상 파일 8장 임베드
+demo.html 생성 (6.4 MB) · 서사 2개
+위성 사례: 지점 4개 · 영상 파일 8장 임베드
+위성 사례: 지점 4개 · 영상 파일 8장 임베드
+demo_story.html 생성 (6.4 MB) · 9단계 한 화면 시연
+--- 10/11 성공 지표 ---
+=== 성공 지표 ===
+[서사] 공작 서사 게시물의 100%가 시스템 서사 N0에 모임 · 순도 100% · 외국어 원문 4/4건 연결 · 쪼개진 서사 수 1
+[CIB ] suspected 27개 중 실제 공작 27개 → 정밀도 1.0 · 재현율 0.9 (공작 30개 중, 나머지 review 3) · 일반 사용자 오탐 suspected 0 / review 0
+[조기] WATCH 13시 · ALERT 41시 · CRITICAL 56시 | 정답 R≥1 56시 · 볼륨 경보 8시
+       경보 시점 한국어 게시물 150건 / 전체 1501건
+[볼륨] 단순 볼륨 경보는 공작 서사에 8시 (k별 {2: 8, 3: 8, 4: 8}) → 우리 WATCH보다 5시간 빠름. 그러나 공작 아닌 서사 1개에도 경보 (서사 [2]) — 우리 방식은 0개
+[오탐] 다른 서사 6개 중 WATCH 이상 0개 · REVIEW에서 멈춤 1개
+[권고] 공작 서사 권고 첫 시각 {'사전 반박 실행 검토': 41, '사전 반박 준비': 13} · 정상 서사 6개 중 사전 반박 준비 이상 0개 (목표 0) · 정상 서사 권고 {'2': {'관찰(집계만) — 국내 사안, 증거 봉인 대상 아님': 31}}
+[R̂  ] 정답 라벨 R 대비 평균 절대오차 0.041 · 평균 편향 0.002 (54시간)
+--- 11/11 재점검 추가분 (제3 신호층·입장 판별·Hawkes·사이트 층 점검) ---
+narrative 0: posts=1501 edges≥1.0=275 suspected=26 tau={'url': 10, 'text': 10, 'repost': 10}
+narrative 1: posts=94 edges≥1.0=43 suspected=0 tau={'url': 10, 'text': 10, 'repost': 10}
+narrative 2: posts=1022 edges≥1.0=463 suspected=0 tau={'url': 10, 'text': 10, 'repost': 10}
+narrative 3: posts=101 edges≥1.0=50 suspected=0 tau={'url': 10, 'text': 10, 'repost': 10}
+narrative 4: posts=98 edges≥1.0=46 suspected=0 tau={'url': 10, 'text': 10, 'repost': 10}
+narrative 5: posts=85 edges≥1.0=35 suspected=0 tau={'url': 10, 'text': 10, 'repost': 10}
+narrative 6: posts=78 edges≥1.0=29 suspected=0 tau={'url': 10, 'text': 10, 'repost': 10}
+narrative 0: {'support': 1501} 제외 0 · ALERT 전체 41 / 찬성만 41 · rules
+narrative 1: {'support': 94} 제외 0 · ALERT 전체 None / 찬성만 None · rules
+narrative 2: {'support': 1022} 제외 0 · ALERT 전체 None / 찬성만 None · rules
+narrative 3: {'support': 101} 제외 0 · ALERT 전체 None / 찬성만 None · rules
+narrative 4: {'support': 98} 제외 0 · ALERT 전체 None / 찬성만 None · rules
+narrative 5: {'support': 85} 제외 0 · ALERT 전체 None / 찬성만 None · rules
+narrative 6: {'support': 78} 제외 0 · ALERT 전체 None / 찬성만 None · rules
+narrative 0: {'first_endogenous_nstar08': 10, 'first_p08_poisson': 41, 'first_p08_overdispersed': 54, 'phi_median': 1.17, 'nstar_at_41': 0.305}
+narrative 1: {'first_endogenous_nstar08': None, 'first_p08_poisson': None, 'first_p08_overdispersed': None, 'phi_median': 1.0, 'nstar_at_41': None}
+narrative 2: {'first_endogenous_nstar08': 4, 'first_p08_poisson': 43, 'first_p08_overdispersed': 43, 'phi_median': 1.15, 'nstar_at_41': 0.638}
+narrative 3: {'first_endogenous_nstar08': None, 'first_p08_poisson': None, 'first_p08_overdispersed': None, 'phi_median': 1.0, 'nstar_at_41': 0.0}
+narrative 4: {'first_endogenous_nstar08': 57, 'first_p08_poisson': None, 'first_p08_overdispersed': None, 'phi_median': 1.0, 'nstar_at_41': None}
+narrative 5: {'first_endogenous_nstar08': None, 'first_p08_poisson': None, 'first_p08_overdispersed': None, 'phi_median': 1.0, 'nstar_at_41': None}
+narrative 6: {'first_endogenous_nstar08': None, 'first_p08_poisson': None, 'first_p08_overdispersed': None, 'phi_median': 1.0, 'nstar_at_41': None}
+domains=6 looked_up=6 pairs_with_signal=7 clusters(≥3, 신호 2종 이상)=1
+   ['harbor-times.example', 'north-star-daily.example', 'seoul-press-mirror.example']
+
+=== 완료! 이제 '시연 시작.command'를 더블클릭하세요. 이 창은 닫아도 됩니다. ===
+[끝] 2026년 10월 26일 월요일 03시 08분 54초 KST

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>확산 그래프 재생</title>
+<style>
+:root{--bg:#1c1c1f;--panel:rgba(32,32,37,.86);--line:#34343b;--txt:#dcddde;--dim:#8b8b94;--ord:#8fa6c4;--sus:#ff7a45;--src:#2fe3a0;--acc:#a882ff}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;overflow:hidden}
+#c{position:absolute;inset:0;width:100%;height:100%;cursor:grab}#c.drag{cursor:grabbing}
+.hud{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(6px);padding:10px 14px}
+#top{top:12px;left:12px;min-width:330px;max-width:calc(100% - 24px)}
+#hour{font-size:30px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+#date{color:var(--dim);font-size:12px;margin-left:6px}
+#lv{display:inline-block;margin-left:10px;padding:2px 10px;border-radius:999px;font-weight:700;font-size:14px;vertical-align:6px}
+#stat{margin-top:4px;font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}#stat b{color:var(--txt)}
+#act{margin-top:6px;font-size:13px}#act .dn{color:#ff9b8a}
+#cnt{top:12px;right:12px;font-size:13px;line-height:1.75;font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:0}
+#bar{left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+button,select{background:#2a2a31;color:var(--txt);border:1px solid #44444d;border-radius:7px;padding:6px 11px;font-size:13px;cursor:pointer;font-family:inherit}
+button:hover{border-color:var(--acc)}#play{width:46px;font-size:15px}
+#scrub{flex:1;min-width:220px;position:relative;height:34px}
+#rng{position:absolute;left:0;right:0;top:8px;width:100%;accent-color:var(--acc)}
+.tick{position:absolute;top:0;transform:translateX(-50%);font-size:10px;font-weight:700;white-space:nowrap;pointer-events:none}
+.tick:after{content:"";position:absolute;left:50%;top:13px;width:2px;height:12px;background:currentColor;transform:translateX(-1px)}
+label{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:5px;cursor:pointer}
+#tip{position:absolute;pointer-events:none;display:none;font-size:12px;padding:7px 10px;max-width:260px}
+#banner{position:absolute;left:50%;top:22%;transform:translate(-50%,-50%) scale(.96);opacity:0;transition:all .35s;pointer-events:none;text-align:center;padding:14px 26px;font-size:15px}
+#banner.on{opacity:1;transform:translate(-50%,-50%) scale(1)}#banner .big{font-size:24px;font-weight:800;margin-bottom:4px}
+#note{position:absolute;right:14px;bottom:70px;font-size:11px;color:#6d6d76;text-align:right}
+@media (max-width:640px){#hour{font-size:22px}#cnt{display:none}#top{min-width:0}}
+</style></head><body>
+<canvas id="c"></canvas>
+<div class="hud" id="top"><span id="hour">0시</span><span id="date"></span><span id="lv"></span>
+ <div id="stat"></div><div id="act"></div></div>
+<div class="hud" id="cnt"></div>
+<div class="hud" id="tip"></div>
+<div class="hud" id="banner"></div>
+<div id="note">합성 데이터 · 계정은 가명 · 일반 사용자는 이름표 없음 · 드래그 이동 · 휠 확대 · 점에 마우스</div>
+<div class="hud" id="bar">
+ <button id="play" title="재생/일시정지 (스페이스)">▶</button>
+ <div id="scrub"><input id="rng" type="range" min="0" step="0.01"></div>
+ <select id="spd" title="재생 속도"><option value="0.8">느리게</option><option value="1.6" selected>보통</option><option value="3.2">빠르게</option></select>
+ <label><input type="checkbox" id="stop" checked>단계마다 멈춤</label>
+ <label><input type="checkbox" id="content">내용 기준(비교)</label>
+ <button id="fit" title="자동 따라가기 다시 켜기">화면 맞춤</button>
+</div>
+<script>
+const D=/*__DATA__*/null;
+const $=id=>document.getElementById(id), cv=$("c"), ctx=cv.getContext("2d");
+const COL={ord:"#8fa6c4",sus:"#ff7a45",src:"#2fe3a0"};
+const N=D.nodes.map((n,i)=>Object.assign(n,{i,x:0,y:0,vx:0,vy:0,born:false,deg:0,nb:[]}));
+const E=D.edges.map(e=>({a:e[0],b:e[1],t:e[2],k:e[3],from:e[4],c:false}));
+const C=D.coord.map(e=>({a:e[0],b:e[1],t:e[2],w:e[3],c:true}));
+const ALL=E.concat(C); ALL.forEach(e=>{N[e.a].nb.push(e);N[e.b].nb.push(e)});
+const PO=D.posts; // [t, acct, parentAcct]
+let T=Math.min(D.start||0,D.max_h), playing=!!D.autoplay, speed=1.6, alpha=1, lastPostIdx=0;
+let W=0,H=0,DPR=1, view={x:0,y:0,k:1}, hover=null, pulses=[], stopsHit=new Set();
+const t0=new Date(D.t0.replace(" ","T"));
+function resize(){DPR=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR}
+window.addEventListener("resize",resize);resize();view.x=W/2;view.y=H/2-10;
+
+// ---------- 상태 함수 (그 시각에 분석관이 알 수 있었던 것만)
+const content=()=>$("content").checked;
+function kind(n,t){ if(n.fo) return "src";
+  if(content()) return (n.ts!=null&&n.ts<=t)?"sus":"ord";
+  return (n.tj!=null&&n.tj<=t)?"sus":"ord"}
+const vis=(n,t)=>n.tf<=t, evis=(e,t)=>e.t<=t&&N[e.a].tf<=t&&N[e.b].tf<=t;
+
+// ---------- 물리 (Obsidian 그래프처럼 밀어내고 당기며 떠다님)
+function birth(n){
+  let anchor=null;
+  for(const e of n.nb){const o=N[e.a===n.i?e.b:e.a]; if(o.born&&o.tf<=n.tf){anchor=o;break}}
+  const r=anchor?18+Math.random()*16:60+Math.random()*80, a=Math.random()*6.283;
+  const bx=anchor?anchor.x:(n.fo?0:0), by=anchor?anchor.y:0;
+  n.x=bx+Math.cos(a)*r;n.y=by+Math.sin(a)*r;n.vx=n.vy=0;n.born=true;alpha=Math.min(1,alpha+0.03);
+}
+function tick(){
+  const vs=N.filter(n=>vis(n,T)); vs.forEach(n=>{if(!n.born)birth(n);n.deg=0});
+  const CELL=110, grid=new Map();
+  for(const n of vs){const k=((n.x/CELL)|0)+","+((n.y/CELL)|0);(grid.get(k)||grid.set(k,[]).get(k)).push(n)}
+  for(const n of vs){const gx=(n.x/CELL)|0, gy=(n.y/CELL)|0;
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const cell=grid.get((gx+dx)+","+(gy+dy));if(!cell)continue;
+      for(const m of cell){if(m.i<=n.i)continue;let x=n.x-m.x,y=n.y-m.y,d2=x*x+y*y+0.01;if(d2>CELL*CELL)continue;
+        const f=420*alpha/d2;n.vx+=x*f;n.vy+=y*f;m.vx-=x*f;m.vy-=y*f}}}
+  for(const e of ALL){if(!evis(e,T))continue;const a=N[e.a],b=N[e.b];a.deg++;b.deg++;
+    const L=e.c?26:38, s=e.c?0.06:0.035;let x=b.x-a.x,y=b.y-a.y,d=Math.sqrt(x*x+y*y)||1;const f=(d-L)/d*s*alpha;
+    a.vx+=x*f;a.vy+=y*f;b.vx-=x*f;b.vy-=y*f}
+  for(const n of vs){n.vx-=n.x*0.0018*alpha;n.vy-=n.y*0.0018*alpha;n.vx*=0.82;n.vy*=0.82;
+    if(n!==dragNode){n.x+=n.vx;n.y+=n.vy}}
+  alpha=Math.max(0.12,alpha*0.995);
+}
+
+// ---------- 그리기
+const rad=n=>Math.max((n.fo?7:2.6)+1.25*Math.sqrt(n.deg),(n.fo?4.5:1.7)/view.k);
+function draw(now){
+  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle="#1c1c1f";ctx.fillRect(0,0,W,H);
+  ctx.setTransform(DPR*view.k,0,0,DPR*view.k,DPR*view.x,DPR*view.y);
+  const hl=hover?new Set([hover.i,...hover.nb.filter(e=>evis(e,T)).map(e=>e.a===hover.i?e.b:e.a)]):null;
+  // 선
+  for(const e of ALL){if(!evis(e,T))continue;const a=N[e.a],b=N[e.b],age=T-e.t;
+    const on=!hl||(hl.has(e.a)&&hl.has(e.b)&&(e.a===hover.i||e.b===hover.i));
+    let col,w=1/view.k*(e.c?1.3:0.8),al;
+    if(e.c){col="255,122,69";al=0.42}
+    else if(e.k==="u"){col="47,227,160";al=0.30}
+    else {col="200,205,220";al=0.11}
+    if(age<1.5&&!e.c){al=Math.max(al,0.75*(1-age/1.5));}
+    if(!on)al*=0.12; else if(hl)al=Math.min(1,al*3.2);
+    ctx.strokeStyle=`rgba(${col},${al})`;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  // 게시 파동
+  pulses=pulses.filter(p=>now-p.s<900);
+  for(const p of pulses){const n=N[p.n];if(!vis(n,T))continue;const q=(now-p.s)/900;
+    ctx.strokeStyle=p.big?`rgba(255,122,69,${0.9*(1-q)})`:`rgba(${p.c},${0.55*(1-q)})`;ctx.lineWidth=(p.big?2.2:1.1)/view.k;
+    ctx.beginPath();ctx.arc(n.x,n.y,rad(n)+(p.big?34:12)*q,0,6.283);ctx.stroke()}
+  // 점
+  for(const pass of ["ord","src","sus"]){
+    for(const n of N){if(!vis(n,T))continue;const kd=kind(n,T);if(kd!==pass)continue;
+      const dim=hl&&!hl.has(n.i);const r=rad(n);
+      ctx.globalAlpha=dim?0.13:1;
+      if(kd!=="ord"&&!dim){ctx.shadowColor=COL[kd];ctx.shadowBlur=14*view.k}
+      ctx.fillStyle=(hover===n)?"#c9b3ff":COL[kd];ctx.beginPath();ctx.arc(n.x,n.y,r,0,6.283);ctx.fill();ctx.shadowBlur=0;
+      const fresh=T-n.tf<0.6;if(fresh&&!dim){ctx.strokeStyle="rgba(255,255,255,.7)";ctx.lineWidth=1/view.k;ctx.stroke()}}}
+  ctx.globalAlpha=1;
+  // 이름표: 외국어 출처·의심 확정(가명)만, 확대했거나 강조 중일 때
+  ctx.font=`${11/view.k}px -apple-system,"Apple SD Gothic Neo",sans-serif`;ctx.textAlign="center";
+  for(const n of N){if(!vis(n,T))continue;const kd=kind(n,T);if(kd==="ord"||!n.id)continue;
+    if(!((n.fo&&view.k>0.45)||view.k>1.25||(hl&&hl.has(n.i))))continue;if(hl&&!hl.has(n.i))continue;
+    ctx.fillStyle=kd==="src"?"rgba(47,227,160,.95)":"rgba(255,170,130,.9)";
+    ctx.fillText(n.fo?"외국어 출처 · "+n.id:n.id,n.x,n.y-rad(n)-5/view.k)}
+}
+
+// ---------- 화면 정보
+const lvS=D.lv;
+function hourRow(){let h=Math.max(1,Math.floor(T));while(h>0&&!D.hours[h])h--;return D.hours[h]||{lv:"NONE"}}
+function fmtDate(t){const d=new Date(t0.getTime()+t*3600e3);const p=x=>String(x).padStart(2,"0");return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`}
+function hud(){
+  const row=hourRow(),st=lvS[row.lv]||lvS.NONE;
+  $("hour").textContent=Math.floor(T)+"시";$("date").textContent="가상 시각 "+fmtDate(T);
+  const lv=$("lv");lv.textContent=st[0]+" "+st[2];lv.style.background=st[1]+"26";lv.style.color=st[1];lv.style.border="1px solid "+st[1];
+  $("stat").innerHTML=row.r==null?"일반 사용자 간 R̂ <b>—</b> (표본 부족)":
+    `일반 사용자 간 R̂ <b>${row.r.toFixed(2)}</b> · P(R>0.8) <b>${Math.round(row.p*100)}%</b> · P(R>1) <b>${Math.round(row.p1*100)}%</b>`;
+  $("act").innerHTML=row.act?`권고 <b>${row.act}</b>`+(row.dont?` · <span class="dn">하지 말 것: ${row.dont}</span>`:""):"";
+  let c={src:0,sus:0,ord:0},np=0;for(const n of N)if(vis(n,T))c[kind(n,T)]++;
+  for(const p of PO){if(p[0]>T)break;np++}
+  let ce=C.filter(e=>evis(e,T)).length;
+  $("cnt").innerHTML=`<span class="dot" style="background:${COL.src}"></span>외국어 출처 <b>${c.src}</b><br>`+
+   `<span class="dot" style="background:${COL.sus}"></span>${content()?"내용 기준 의심":"행동 기준 의심(가명)"} <b>${c.sus}</b><br>`+
+   `<span class="dot" style="background:${COL.ord}"></span>일반 사용자 <b>${c.ord}</b><br>`+
+   `<span style="color:var(--dim)">게시물 ${np}건 · 조정 연결 ${ce}개</span>`;
+  $("rng").value=T;
+}
+// 단계 눈금
+$("rng").max=D.max_h;
+for(const [h,lv] of D.stops){const s=lvS[lv],el=document.createElement("div");el.className="tick";el.style.left=(h/D.max_h*100)+"%";el.style.color=s[1];el.textContent=`${s[0]} ${h}시 ${s[2]}`;$("scrub").appendChild(el)}
+
+function banner(h,lv){const s=lvS[lv],row=D.hours[h]||{};let sub="";
+  if(lv==="WATCH")sub=`외국어 출처 ${D.n_foreign}건이 일반 사용자 확산보다 ${D.lead}시간 먼저 · 의심 계정 등장`;
+  else if(row.r!=null)sub=`R̂ ${row.r.toFixed(2)} · P(R>0.8) ${Math.round(row.p*100)}% · P(R>1) ${Math.round(row.p1*100)}%`;
+  if(row.act)sub+=`<br>권고: <b>${row.act}</b>`;
+  const b=$("banner");b.style.borderColor=s[1];b.innerHTML=`<div class="big" style="color:${s[1]}">${s[0]} ${h}시 · ${s[2]} 단계 진입</div>${sub}`;
+  b.classList.add("on");clearTimeout(banner.t);banner.t=setTimeout(()=>b.classList.remove("on"),playing?2600:4200)}
+
+// ---------- 시간 진행
+function advance(dt){
+  if(!playing)return;let nT=T+dt*speed;
+  if($("stop").checked)for(const [h,lv] of D.stops){if(T<h&&nT>=h&&!stopsHit.has(h)){nT=h;stopsHit.add(h);playing=false;$("play").textContent="▶";banner(h,lv)}}
+  if(nT>=D.max_h){nT=D.max_h;playing=false;$("play").textContent="↻"}
+  emit(T,nT);T=nT}
+function emit(a,b){const now=performance.now();let cnt=0;
+  for(const p of PO){if(p[0]<=a)continue;if(p[0]>b)break;if(++cnt>60)break;
+    const n=N[p[1]];pulses.push({n:p[1],s:now,c:n.fo?"47,227,160":"200,210,230"})}
+  for(const n of N){if(n.tj!=null&&n.tj>a&&n.tj<=b&&!content())pulses.push({n:n.i,s:now,big:true})}}
+function seek(t){T=Math.max(0,Math.min(D.max_h,t));stopsHit=new Set(D.stops.filter(s=>s[0]<=T).map(s=>s[0]));alpha=Math.min(1,alpha+0.3)}
+
+let follow=true;
+function target(){const vs=N.filter(n=>vis(n,T)&&n.born);if(!vs.length)return null;let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  vs.forEach(n=>{x0=Math.min(x0,n.x);x1=Math.max(x1,n.x);y0=Math.min(y0,n.y);y1=Math.max(y1,n.y)});
+  const k=Math.min(2.2,Math.min(W/(x1-x0+200),(H-200)/(y1-y0+200)));return {k,x:W/2-k*(x0+x1)/2,y:(H-30)/2-k*(y0+y1)/2}}
+function follow_cam(){if(!follow)return;const g=target();if(!g)return;const a=0.06;view.k+=(g.k-view.k)*a;view.x+=(g.x-view.x)*a;view.y+=(g.y-view.y)*a}
+let last=performance.now();
+function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;advance(dt);tick();follow_cam();draw(now);hud();requestAnimationFrame(loop)}
+
+// ---------- 조작
+$("play").onclick=()=>{if(T>=D.max_h){seek(0);N.forEach(n=>n.born=false)}playing=!playing;$("play").textContent=playing?"❚❚":"▶";$("banner").classList.remove("on")};
+$("rng").oninput=e=>{seek(+e.target.value)};
+$("spd").onchange=e=>speed=+e.target.value;
+$("content").onchange=()=>{};
+$("fit").onclick=()=>{follow=true;fit()};
+document.addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();$("play").click()}});
+function fit(){const g=target();if(g){view.k=g.k;view.x=g.x;view.y=g.y}}
+function fit_old(){const vs=N.filter(n=>vis(n,T));if(!vs.length)return;let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  vs.forEach(n=>{x0=Math.min(x0,n.x);x1=Math.max(x1,n.x);y0=Math.min(y0,n.y);y1=Math.max(y1,n.y)});
+  const k=Math.min(2.2,Math.min(W/(x1-x0+160),(H-180)/(y1-y0+160)));view.k=k;view.x=W/2-k*(x0+x1)/2;view.y=(H-40)/2-k*(y0+y1)/2}
+const toW=(sx,sy)=>[(sx-view.x)/view.k,(sy-view.y)/view.k];
+function pick(sx,sy){const [x,y]=toW(sx,sy);let best=null,bd=1e9;for(const n of N){if(!vis(n,T))continue;const d=(n.x-x)**2+(n.y-y)**2,r=rad(n)+5/view.k;if(d<r*r&&d<bd){bd=d;best=n}}return best}
+let dragNode=null,pan=null;
+cv.addEventListener("mousedown",e=>{const n=pick(e.offsetX,e.offsetY);if(n){dragNode=n}else{pan=[e.offsetX-view.x,e.offsetY-view.y];follow=false}cv.classList.add("drag")});
+window.addEventListener("mouseup",()=>{dragNode=null;pan=null;cv.classList.remove("drag")});
+cv.addEventListener("mousemove",e=>{
+  if(dragNode){const [x,y]=toW(e.offsetX,e.offsetY);dragNode.x=x;dragNode.y=y;alpha=Math.max(alpha,0.4);return}
+  if(pan){view.x=e.offsetX-pan[0];view.y=e.offsetY-pan[1];return}
+  hover=pick(e.offsetX,e.offsetY);const tip=$("tip");
+  if(!hover){tip.style.display="none";return}
+  const kd=kind(hover,T),np=PO.filter(p=>p[1]===hover.i&&p[0]<=T).length,deg=hover.nb.filter(x=>evis(x,T)).length;
+  let h=kd==="src"?`<b style="color:${COL.src}">외국어 출처</b> · ${hover.id}`:kd==="sus"?`<b style="color:${COL.sus}">${content()?"내용 기준 의심":"행동 기준 의심"}</b>${hover.id?" · "+hover.id:""}`:`<b style="color:${COL.ord}">일반 사용자</b> <span style="color:var(--dim)">(이름표 없음)</span>`;
+  h+=`<br>처음 등장 ${fmtDate(hover.tf)} · 게시 ${np}건 · 연결 ${deg}개`;
+  if(kd==="sus"&&!content()&&hover.tj!=null)h+=`<br>반복 동시 게시로 의심 확정 ${fmtDate(hover.tj)}`;
+  tip.innerHTML=h;tip.style.display="block";tip.style.left=Math.min(W-270,e.offsetX+14)+"px";tip.style.top=(e.offsetY+14)+"px"});
+cv.addEventListener("mouseleave",()=>{hover=null;$("tip").style.display="none"});
+cv.addEventListener("wheel",e=>{e.preventDefault();follow=false;const f=Math.exp(-e.deltaY*0.0015),k=Math.max(0.25,Math.min(5,view.k*f));
+  view.x=e.offsetX-(e.offsetX-view.x)*k/view.k;view.y=e.offsetY-(e.offsetY-view.y)*k/view.k;view.k=k},{passive:false});
+
+// 시작: 시작 시각까지의 배치를 미리 계산해 두면 첫 화면부터 자리 잡힌 모습
+seek(T);for(let i=0;i<(T>0?260:0);i++)tick();
+fit();
+$("play").textContent=playing?"❚❚":"▶";
+requestAnimationFrame(loop);
+</script></body></html>

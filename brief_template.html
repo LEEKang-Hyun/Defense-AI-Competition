@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>백신 — 3분 시연</title>
+<style>
+:root{--bg:#121214;--panel:#1b1b1f;--line:#2c2c33;--text:#e8e8ec;--muted:#9b9ba5;--acc:#8b7cff;--org:#5aa9ff;--sus:#ff8a5c;--for:#1baf7a;--warn:#f0b429;--crit:#ff5c5c;--rowhl:#262630}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;overflow:hidden}
+#app{display:grid;grid-template-rows:60px 1fr 44px;grid-template-columns:minmax(0,1fr);height:100vh;width:100vw;padding:10px 16px;gap:10px}
+header{display:flex;align-items:center;gap:12px;white-space:nowrap;min-width:0;overflow:hidden}header>div:first-child{min-width:0;overflow:hidden}
+header .t{font-size:21px;font-weight:800;letter-spacing:-.3px}
+header .sub{color:var(--muted);font-size:13px}
+.badge{border:1px solid var(--warn);color:var(--warn);border-radius:999px;padding:4px 12px;font-size:14px;font-weight:700;white-space:nowrap}
+.rail{display:flex;gap:6px;margin-left:auto}
+.rail .st{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:14px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.rail .st.on{background:var(--acc);color:#fff;border-color:var(--acc)}.rail .st.done{color:var(--text)}
+.ctrl{display:flex;gap:6px;flex-shrink:0}.btn{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:7px 12px;font-size:15px;cursor:pointer;white-space:nowrap;text-decoration:none}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+main{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:1fr 310px;gap:10px;min-height:0}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-height:0;display:flex;flex-direction:column;position:relative}
+.box .bt{font-size:16px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.box .bt b{color:var(--text);font-size:18px}
+canvas{width:100%;height:100%;display:block}
+#curveBox{grid-column:1;grid-row:1}#status{grid-column:2;grid-row:1}#evid{grid-column:1/3;grid-row:2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;background:none;border:none;padding:0}
+.ev{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;min-height:0;opacity:.25;transition:opacity .6s}.ev.show{opacity:1}.ev .bt{font-size:14px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}.ev .bt b{color:var(--text);font-size:17px}
+.kp{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:7px}.kp .l{font-size:13px;color:var(--muted)}.kp .v{font-size:30px;font-weight:800;line-height:1.1}.kp .n{font-size:12px;color:var(--muted)}
+.lv{display:inline-block;padding:3px 10px;border-radius:8px;font-weight:800;font-size:18px}
+.phr{font-size:13px;line-height:1.4;overflow:auto}.phr .row{display:grid;grid-template-columns:52px 1fr;gap:8px;margin-bottom:6px}.phr .lg{color:var(--for);font-weight:700}.phr .ko{color:var(--sus);font-weight:700}.phr .or{color:var(--org);font-weight:700}
+.phr mark{background:rgba(255,138,92,.25);color:inherit;padding:0 2px;border-radius:3px}
+footer{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:15px}
+footer .prog{flex:1;height:6px;background:var(--line);border-radius:3px;margin:0 16px;overflow:hidden}footer .prog i{display:block;height:100%;background:var(--acc);width:0}
+#analyst{position:absolute;inset:0;background:rgba(27,27,31,.96);border-radius:14px;display:none;flex-direction:column;justify-content:center;padding:18px;gap:10px}#analyst.show{display:flex}
+#analyst h3{margin:0;font-size:22px}#analyst p{margin:0;font-size:15px;color:var(--muted);line-height:1.45}
+#analyst .opts{display:flex;gap:8px;margin-top:4px}#analyst .opts .btn{flex:1;font-size:17px;padding:12px}
+#analyst .opts .btn.sel{outline:3px solid var(--acc)}
+#climax{position:absolute;left:70px;top:44px;display:none;pointer-events:none}#climax.show{display:flex}
+#climax .card{background:rgba(27,27,31,.94);border:1px solid var(--acc);border-radius:18px;padding:18px 26px;text-align:center;max-width:560px}
+#climax .big{font-size:62px;font-weight:900;line-height:1;color:var(--warn)}#climax .big2{font-size:34px;font-weight:800;color:var(--sus);margin-top:6px}
+#climax .d{color:var(--muted);font-size:14px;margin-top:10px;line-height:1.45}
+.note{position:absolute;right:12px;bottom:8px;font-size:12px;color:var(--muted)}
+#script{position:fixed;left:16px;bottom:62px;max-width:700px;background:rgba(27,27,31,.95);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:16px;line-height:1.5;display:none}#script.show{display:block}
+@media(max-width:1500px){header .sub{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div><div class="t">백신 — 조직적 정보조작 조기경보</div><div class="sub">행위 패턴으로 잡고, 근거와 함께 분석관에게 넘긴다 · 최종 판단은 사람</div></div>
+  <span class="badge">합성 데이터 기반 시연 · 72시간 가상 시나리오</span>
+  <div class="rail" id="rail"></div>
+  <div class="ctrl"><button class="btn" id="prev">◀</button><button class="btn pri" id="play">▶ 재생</button><button class="btn" id="next">다음 ▶</button><button class="btn" id="scriptBtn" title="발표 멘트">멘트</button><a class="btn" id="detail" href="시연_한화면.html" target="_blank" title="9단계 상세 화면(백업)">상세</a></div>
+</header>
+<main>
+  <div class="box" id="curveBox"><div class="bt"><b id="curveTitle">확산 곡선 — 시간당 게시 수</b><span id="curveSub">0시 → 72시</span></div><canvas id="curve"></canvas>
+    <div id="climax"><div class="card"><div class="d" style="margin:0 0 6px">확산 정점(<span id="cxPeak"></span>시, 시간당 <span id="cxPeakN"></span>건)보다</div><div class="big"><span id="cxAlert"></span>시간 앞서 경보</div><div class="big2"><span id="cxWatch"></span>시간 앞서 관찰</div><div class="d">관찰 = 반복 동시 게시 + 외국어 출처(게시물 <span id="cxCumW"></span>건 시점) · 경보 = 일반 사용자 사이 재생산수가 1에 다가감(<span id="cxCumA"></span>건 시점)<br>합성 시나리오 안의 값이며 실제 성능 수치가 아닙니다</div></div></div>
+  </div>
+  <div class="box" id="status"><div class="bt"><b>상태</b><span id="clock">0시</span></div>
+    <div class="kp"><div class="l">단계</div><div class="v" id="lvl"><span class="lv" style="background:#2a2a30;color:var(--muted)">평상시</span></div><div class="n" id="lvlN">경보 없음</div></div>
+    <div class="kp"><div class="l">반복 동시 게시 의심 계정</div><div class="v" id="nsus">0</div><div class="n" id="nsusN">10분 안 같은 링크·거의 같은 문장, 2회 이상</div></div>
+    <div class="kp"><div class="l">외국어 출처 연결</div><div class="v" id="nfor">0</div><div class="n">한국어보다 먼저 나온 외국어 기사</div></div>
+    <div class="kp"><div class="l">이 서사의 게시물 (누적)</div><div class="v" id="cum">0</div><div class="n" id="p08">일반 사용자 간 P(R&gt;0.8): —</div></div>
+    <div id="analyst"><h3>검토 요청 — 동시 게시 묶음 #1</h3><p>8시 00분부터 11분 동안 계정 20개가 같은 외국어 기사 링크를 거의 같은 문장으로 올렸습니다. 계정 나이 4~13일. 속보 동기화·팬덤 합의 게시일 가능성을 확인해 주세요.</p><div class="opts"><button class="btn" data-j="승인">승인</button><button class="btn" data-j="보류">보류</button><button class="btn" data-j="기각">기각</button></div><p id="jres">판정은 증거 체인 끝 해시에 이어 기록됩니다. 단계는 자동으로 내려가지 않습니다.</p></div>
+  </div>
+  <div id="evid">
+    <div class="ev" id="ev1"><div class="bt"><b>① 계정 연결망</b><span>같은 묶음에 함께 등장</span></div><canvas id="graph"></canvas><div class="note">주황 = 의심 군집 · 파랑 = 일반 사용자(집계) · 이름표 없음</div></div>
+    <div class="ev" id="ev2"><div class="bt"><b>② 게시 시각 분포</b><span>분 단위</span></div><canvas id="hist"></canvas></div>
+    <div class="ev" id="ev3"><div class="bt"><b>③ 유사 문구 비교</b><span>외국어 원문 → 한국어 변형</span></div><div class="phr" id="phr"></div></div>
+  </div>
+</main>
+<footer><span>행위 패턴만 봅니다 · 내용의 진위는 판단하지 않습니다 · 계정은 가명, 일반 사용자는 집계로만 · 최종 판단은 분석관</span><div class="prog"><i id="prog"></i></div><span id="stepLbl"></span></footer>
+</div>
+<div id="script"></div>
+<script>
+const D=/*DATA*/;
+const M=D.meta,W=M.first.WATCH,A=M.first.ALERT,C=M.first.CRITICAL,PK=M.peak_h;
+const STEPS=[
+ {id:"calm",name:"① 평상시",dur:20,from:0,to:7,say:"72시간짜리 가상 시나리오입니다. 평소에는 이 주제 게시물이 시간당 몇 건뿐이고, 시스템은 아무것도 하지 않습니다. 내용은 보지 않고, 누가 언제 무엇을 함께 올렸는지만 봅니다."},
+ {id:"seed",name:"② 발아",dur:25,from:7,to:12.5,say:"0시 30분, 외국어 매체 네 곳이 같은 이야기를 차례로 냅니다. 8시, 만들어진 지 열흘쯤 된 계정 20개가 그 링크를 한국어로 11분 안에 올립니다. 아직 일반 사용자 반응은 거의 없습니다."},
+ {id:"detect",name:"③ 초기 신호",dur:25,from:12.5,to:W,say:"13시, 같은 계정들이 두 번째로 동시 게시를 하자 '관찰' 경보가 뜹니다. 게시물 57건 시점입니다. 볼륨이 아니라 반복된 행동이 잡았습니다."},
+ {id:"evid",name:"④ 근거",dur:50,from:W,to:W,say:"경보에는 근거 세 가지가 붙습니다. 왼쪽, 같은 묶음에 반복 등장한 계정들의 연결망. 가운데, 11분 안에 몰린 게시 시각과 평소 한 시간의 비교. 오른쪽, 외국어 원문과 거의 같은 한국어 문장들. 세 가지 다 행위입니다. 글이 맞는지 틀린지는 보지 않습니다."},
+ {id:"review",name:"⑤ 분석관",dur:30,from:W,to:A,say:"시스템은 판정하지 않습니다. 분석관이 이 묶음이 속보 동기화나 팬덤이 아닌지 확인하고 승인·보류·기각을 고릅니다. 판정은 증거 체인에 기록되고, 단계는 자동으로 내려가지 않습니다. 41시, 일반 사용자 사이 재생산수가 1에 다가가 '경보'로 올라갑니다."},
+ {id:"peak",name:"⑥ 정점",dur:30,from:A,to:72,say:"그 뒤 서사는 63시에 정점에 닿습니다. 시간당 178건. 경보는 그보다 22시간, 관찰은 50시간 앞섰습니다. 그 시간이 '외국발이라고 말하며 대응할 수 있는' 창입니다. 합성 시나리오 안의 숫자입니다."}];
+let STEP=0,H=0,PLAYING=false,RAF=null,T0=0,JUDGED=null;
+const $=id=>document.getElementById(id);
+function lvAt(h){if(h>=C)return["위험","var(--crit)","P(R>1) 50% 이상 — 일반인이 스스로 퍼뜨리는 단계"];if(h>=A)return["경보","var(--sus)","P(R>0.8) 50% 이상 — 일반인 사이 확산 시작"];if(h>=W)return["관찰","var(--warn)","반복 동시 게시 + 외국어 출처"];return["평상시","#2a2a30","경보 없음"]}
+function cum(h){let s=0;for(let i=0;i<Math.min(72,Math.floor(h));i++)s+=D.series.all[i]*0+ (D.series.org[i]+D.series.camp[i]);return s}
+function renderRail(){$("rail").innerHTML=STEPS.map((s,i)=>`<div class="st ${i===STEP?"on":i<STEP?"done":""}" onclick="go(${i})">${s.name}</div>`).join("");$("stepLbl").textContent=`${STEP+1} / ${STEPS.length} · ${STEPS[STEP].name}`}
+function renderStatus(){const h=H,[n,c,d]=lvAt(h);$("clock").textContent=`${Math.floor(h)}시`;$("lvl").innerHTML=`<span class="lv" style="background:${c};color:${n==="평상시"?"var(--muted)":"#111"}">${n}</span>`;$("lvlN").textContent=d;
+ const ns=h>=1?D.series.nsusp[Math.min(71,Math.floor(h)-1)]:0;$("nsus").textContent=ns;$("nsus").style.color=ns>=5?"var(--sus)":"var(--text)";
+ const nf=D.foreign.filter(f=>f.h<=h).length;$("nfor").textContent=nf;$("nfor").style.color=nf?"var(--for)":"var(--text)";
+ $("cum").textContent=cum(h).toLocaleString();const p=h>=1?D.series.p08[Math.min(71,Math.floor(h)-1)]:null;$("p08").textContent="일반 사용자 간 P(R>0.8): "+(p==null?"— (표본 부족)":Math.round(p*100)+"%")}
+function drawCurve(){const cv=$("curve"),r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;cv.width=r.width*dpr;cv.height=r.height*dpr;const g=cv.getContext("2d");g.scale(dpr,dpr);const Wd=r.width,Ht=r.height,L=46,R=14,T=16,B=30,w=Wd-L-R,hh=Ht-T-B;
+ const mx=Math.max(...D.series.all)*1.08;const x=i=>L+i/72*w,y=v=>T+hh-v/mx*hh;g.clearRect(0,0,Wd,Ht);
+ g.strokeStyle="#2c2c33";g.lineWidth=1;for(let v=0;v<=mx;v+=50){g.beginPath();g.moveTo(L,y(v));g.lineTo(L+w,y(v));g.stroke();g.fillStyle="#9b9ba5";g.font="12px sans-serif";g.textAlign="right";g.fillText(v,L-6,y(v)+4)}
+ g.textAlign="center";for(let t=0;t<=72;t+=12){g.fillStyle="#9b9ba5";g.fillText(t+"시",x(t),Ht-10)}
+ const upto=Math.min(72,Math.floor(H));
+ // organic area
+ g.beginPath();g.moveTo(x(0),y(0));for(let i=0;i<upto;i++){g.lineTo(x(i+.5),y(D.series.org[i]))}g.lineTo(x(upto),y(0));g.closePath();g.fillStyle="rgba(90,169,255,.25)";g.fill();
+ g.beginPath();for(let i=0;i<upto;i++){const px=x(i+.5),py=y(D.series.org[i]);i?g.lineTo(px,py):g.moveTo(px,py)}g.strokeStyle="var(--org)";g.strokeStyle="#5aa9ff";g.lineWidth=2.5;g.stroke();
+ // campaign bars
+ for(let i=0;i<upto;i++){const v=D.series.camp[i];if(!v)continue;g.fillStyle="#ff8a5c";g.fillRect(x(i)+1,y(v),Math.max(2,w/72-2),y(0)-y(v))}
+ // foreign markers
+ D.foreign.forEach(f=>{if(f.h>H)return;g.fillStyle="#1baf7a";g.beginPath();g.arc(x(f.h),y(0)-6,5,0,7);g.fill()});
+ // marks
+ const marks=[[W,"관찰","#f0b429"],[A,"경보","#ff8a5c"],[C,"위험","#ff5c5c"],[PK,"정점","#e8e8ec"]];
+ marks.forEach(([t,l,c])=>{if(t>H&&!(STEP===5))return;g.setLineDash([5,4]);g.strokeStyle=c;g.lineWidth=1.5;g.beginPath();g.moveTo(x(t),T);g.lineTo(x(t),y(0));g.stroke();g.setLineDash([]);g.fillStyle=c;g.font="bold 14px sans-serif";g.textAlign="center";g.fillText(`${l} ${t}시`,x(t),T+12)});
+ // playhead
+ g.strokeStyle="#8b7cff";g.lineWidth=2;g.beginPath();g.moveTo(x(H),T);g.lineTo(x(H),y(0));g.stroke();
+ // legend
+ const lx=L+w-330,ly=T+hh-28;g.font="13px sans-serif";g.textAlign="left";g.fillStyle="#5aa9ff";g.fillRect(lx,ly,12,12);g.fillStyle="#e8e8ec";g.fillText("일반 사용자(집계)",lx+16,ly+11);g.fillStyle="#ff8a5c";g.fillRect(lx+132,ly,12,12);g.fillStyle="#e8e8ec";g.fillText("의심 계정 게시",lx+148,ly+11);g.fillStyle="#1baf7a";g.beginPath();g.arc(lx+252,ly+6,5,0,7);g.fill();g.fillStyle="#e8e8ec";g.fillText("외국어 매체 원문",lx+262,ly+11)}
+let GPOS=null;function layoutGraph(){const S=D.graph.sus.length,O=D.graph.org.length;const pos=[];for(let i=0;i<S;i++){const a=i/S*6.283;pos.push([Math.cos(a)*.3+(Math.random()-.5)*.1,Math.sin(a)*.3+(Math.random()-.5)*.1])}for(let k=0;k<O;k++){const a=k/O*6.283;pos.push([Math.cos(a)*.78,Math.sin(a)*.78*.8])}
+ for(let it=0;it<120;it++){const f=pos.map(()=>[0,0]);for(let i=0;i<pos.length;i++)for(let j=i+1;j<pos.length;j++){let dx=pos[i][0]-pos[j][0],dy=pos[i][1]-pos[j][1],d2=dx*dx+dy*dy+.004,k=.004/d2;f[i][0]+=dx*k;f[i][1]+=dy*k;f[j][0]-=dx*k;f[j][1]-=dy*k}
+ const pull=(a,b,kk)=>{let dx=pos[b][0]-pos[a][0],dy=pos[b][1]-pos[a][1];f[a][0]+=dx*kk;f[a][1]+=dy*kk;f[b][0]-=dx*kk;f[b][1]-=dy*kk};D.graph.edges.forEach(e=>pull(e[0],e[1],.006));D.graph.org_edges.forEach(e=>pull(e[0],e[1],.015));
+ pos.forEach((p,i)=>{p[0]=Math.max(-1,Math.min(1,p[0]+f[i][0]*.5));p[1]=Math.max(-1,Math.min(1,p[1]+f[i][1]*.5))})}GPOS=pos}
+function drawGraph(){const cv=$("graph"),r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;cv.width=r.width*dpr;cv.height=r.height*dpr;const g=cv.getContext("2d");g.scale(dpr,dpr);if(!GPOS)layoutGraph();const S=D.graph.sus.length;const X=p=>r.width/2+p[0]*r.width*.46,Y=p=>r.height/2+p[1]*r.height*.44;
+ g.clearRect(0,0,r.width,r.height);const vis=i=>i<S?D.graph.sus[i].first<=H:D.graph.org[i-S].first<=H;
+ g.lineWidth=1;D.graph.org_edges.forEach(e=>{if(!vis(e[0])||!vis(e[1]))return;g.strokeStyle="rgba(90,169,255,.35)";g.beginPath();g.moveTo(X(GPOS[e[0]]),Y(GPOS[e[0]]));g.lineTo(X(GPOS[e[1]]),Y(GPOS[e[1]]));g.stroke()});
+ D.graph.edges.forEach(e=>{if(!vis(e[0])||!vis(e[1]))return;g.strokeStyle=`rgba(255,138,92,${.15+e[2]*.15})`;g.lineWidth=.6+e[2]*.5;g.beginPath();g.moveTo(X(GPOS[e[0]]),Y(GPOS[e[0]]));g.lineTo(X(GPOS[e[1]]),Y(GPOS[e[1]]));g.stroke()});
+ GPOS.forEach((p,i)=>{if(!vis(i))return;const sus=i<S;g.beginPath();g.arc(X(p),Y(p),sus?5.5:3.5,0,7);g.fillStyle=sus?"#ff8a5c":"#5aa9ff";g.fill();if(sus){g.strokeStyle="rgba(255,138,92,.45)";g.lineWidth=1.5;g.beginPath();g.arc(X(p),Y(p),9,0,7);g.stroke()}});
+ g.fillStyle="#e8e8ec";g.font="bold 14px sans-serif";g.textAlign="left";const ns=GPOS.filter((p,i)=>vis(i)&&i<S).length;g.fillText(`의심 군집 ${ns}개 계정 · 나이 ${M.age_min}~${M.age_max}일 (중앙값 ${M.age_med}일)`,8,16)}
+function drawHist(){const cv=$("hist"),r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;cv.width=r.width*dpr;cv.height=r.height*dpr;const g=cv.getContext("2d");g.scale(dpr,dpr);g.clearRect(0,0,r.width,r.height);
+ const rows=[["8시 00분~ 동시 게시 묶음 #1 (의심 계정 20개)",D.burst1_offsets,"#ff8a5c",12],[`${D.background_hour}시 한 시간, 일반 사용자 ${D.background_offsets.length}건 (비교)`,D.background_offsets,"#5aa9ff",60]];
+ const L=10,R=10,rowH=(r.height-10)/2;rows.forEach(([lab,arr,col,span],k)=>{const top=5+k*rowH,base=top+rowH-22;g.fillStyle="#e8e8ec";g.font="bold 13px sans-serif";g.textAlign="left";g.fillText(lab,L,top+14);g.strokeStyle="#2c2c33";g.beginPath();g.moveTo(L,base);g.lineTo(r.width-R,base);g.stroke();
+ const bins=new Array(60).fill(0);arr.forEach(m=>{const b=Math.min(59,Math.floor(m/span*60));bins[b]++});const mx=Math.max(1,...bins),bw=(r.width-L-R)/60;bins.forEach((v,i)=>{if(!v)return;const hgt=v/mx*(rowH-44);g.fillStyle=col;g.fillRect(L+i*bw+1,base-hgt,bw-2,hgt)});
+ g.fillStyle="#9b9ba5";g.font="11px sans-serif";g.textAlign="left";g.fillText("0분",L,base+12);g.textAlign="right";g.fillText(span+"분",r.width-R,base+12)})}
+function renderPhr(){const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));const hl=s=>esc(s).replace(/(방위비|포기|버리|철수|준비|동맹|균열)/g,"<mark>$1</mark>");
+ const cut=(s,n)=>s.length>n?s.slice(0,n)+"…":s;const f=D.foreign.map(x=>`<div class="row"><span class="lg">${x.lang.toUpperCase()} ${x.h}시</span><span>${esc(cut(x.text,58))}</span></div>`).join("");
+ const k=D.ko_variants.slice(0,3).map(x=>`<div class="row"><span class="ko">의심 8시</span><span>${hl(cut(x,62))}</span></div>`).join("");
+ const o=D.organic_samples.slice(0,2).map(x=>`<div class="row"><span class="or">일반</span><span>${esc(x)}</span></div>`).join("");
+ $("phr").innerHTML=f+`<div style="color:var(--muted);font-size:12px;margin:4px 0">↓ 한국어 변형 — 번역투 골격은 같고 꼬리말만 다름 (묶음 안 문장 유사도 0.65~0.78)</div>`+k+`<div style="color:var(--muted);font-size:12px;margin:4px 0">↓ 일반 사용자의 반응 — 같은 주제, 다른 말투. 내용이 같아도 행동이 다르면 의심하지 않음</div>`+o}
+function renderAll(){renderRail();renderStatus();drawCurve();const ev=STEP>=3;["ev1","ev2","ev3"].forEach(id=>$(id).classList.toggle("show",ev));if(ev){drawGraph();drawHist();renderPhr()}else{drawGraph();drawHist();renderPhr()}
+ $("analyst").classList.toggle("show",STEP===4);$("climax").classList.toggle("show",STEP===5&&H>=71.9);
+ $("curveSub").textContent=STEP===5?`정점 ${PK}시 · 시간당 ${M.peak_n}건`:`0시 → 72시 · 지금 ${Math.floor(H)}시`;
+ $("script").textContent=STEPS[STEP].say;$("play").textContent=PLAYING?"⏸ 일시정지":"▶ 재생";
+ const done=STEPS.slice(0,STEP).reduce((s,x)=>s+x.dur,0),tot=STEPS.reduce((s,x)=>s+x.dur,0);const S=STEPS[STEP],fr=S.to>S.from?(H-S.from)/(S.to-S.from):1;$("prog").style.width=((done+S.dur*Math.max(0,Math.min(1,fr)))/tot*100)+"%"}
+function go(i,keep){stop();STEP=Math.max(0,Math.min(STEPS.length-1,i));H=keep?H:STEPS[STEP].to;if(STEP===5&&!keep)H=72;renderAll()}
+function stop(){PLAYING=false;if(RAF)cancelAnimationFrame(RAF);RAF=null}
+function play(){if(PLAYING){stop();renderAll();return}PLAYING=true;const S=STEPS[STEP];H=S.from;T0=performance.now();const tick=()=>{if(!PLAYING)return;const el=(performance.now()-T0)/1000,fr=Math.min(1,el/S.dur);H=S.from+(S.to-S.from)*fr;renderAll();if(fr>=1){if(STEP<STEPS.length-1){STEP++;const N=STEPS[STEP];H=N.from;T0=performance.now();}else{stop();renderAll();return}}RAF=requestAnimationFrame(tick)};RAF=requestAnimationFrame(tick)}
+$("play").onclick=play;$("next").onclick=()=>go(STEP+1);$("prev").onclick=()=>go(STEP-1);$("scriptBtn").onclick=()=>$("script").classList.toggle("show");
+document.querySelectorAll("#analyst .opts .btn").forEach(b=>b.onclick=()=>{JUDGED=b.dataset.j;document.querySelectorAll("#analyst .opts .btn").forEach(x=>x.classList.toggle("sel",x===b));$("jres").textContent=`판정 '${JUDGED}' 기록 — 가명 역할 · 시각 · 묶음 ID가 증거 체인 끝 해시에 이어집니다 (시연에서는 기록만). ${JUDGED==="기각"?"기각 시 이 묶음을 빼고 의심 집단을 다시 셉니다(시연 ⑨ 단계 참조).":"단계는 자동으로 내려가지 않습니다."}`});
+document.addEventListener("keydown",e=>{if(e.key==="ArrowRight")go(STEP+1);else if(e.key==="ArrowLeft")go(STEP-1);else if(e.key===" "){e.preventDefault();play()}});
+window.addEventListener("resize",renderAll);
+$("cxPeak").textContent=PK;$("cxPeakN").textContent=M.peak_n;$("cxAlert").textContent=PK-A;$("cxWatch").textContent=PK-W;$("cxCumW").textContent=M.cum_at[W];$("cxCumA").textContent=M.cum_at[A];
+H=0;renderAll();
+</script>
+</body>
+</html>
